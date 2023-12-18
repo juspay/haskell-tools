@@ -240,7 +240,7 @@ trfGuardedCaseRhs :: (TransformName n r) => Located (GRHS (GhcPass n) (LHsExpr (
 trfGuardedCaseRhs = trfLocNoSema trfGuardedCaseRhs'
 
 trfGuardedCaseRhs' :: (TransformName n r) => GRHS (GhcPass n) (LHsExpr (GhcPass n)) -> Trf (AST.UGuardedCaseRhs (Dom (GhcPass r)) RangeStage)
-trfGuardedCaseRhs' = undefined --gTrfGuardedCaseRhs' trfExpr
+trfGuardedCaseRhs' = gTrfGuardedCaseRhs' trfExpr
 
 gTrfGuardedCaseRhs' :: (TransformName n r) => (Located (ge (GhcPass n)) -> Trf (Ann ae (Dom (GhcPass r)) RangeStage)) -> GRHS (GhcPass n) (Located (ge (GhcPass n))) -> Trf (AST.UGuardedCaseRhs' ae (Dom (GhcPass r)) RangeStage)
 gTrfGuardedCaseRhs' te (GRHS _ guards body) = AST.UGuardedCaseRhs <$> trfAnnList " " trfRhsGuard' guards <*> te body

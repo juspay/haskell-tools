@@ -20,11 +20,13 @@ import Data.List (foldl')
 
 -- NOTE: Looking for only types file
 isHaskellFile :: FilePath -> Bool
-isHaskellFile file = takeExtension file == ".hs" && "Types" `isInfixOf` file
+isHaskellFile file = takeExtension file == ".hs"
 
 getAllHaskellModules :: FilePath -> IO [FilePath]
 getAllHaskellModules dir = do
   contents <- getDirectoryContents dir
+  print $ show contents 
+  -- undefined
   let files = filter (\f -> f /= "." && f /= "..") contents
   paths <- forM files $ \file -> do
     let path = dir System.FilePath.</> file

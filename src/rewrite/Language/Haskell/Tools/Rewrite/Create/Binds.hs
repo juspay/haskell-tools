@@ -32,11 +32,19 @@ mkFunctionBind = mkAnn child . UFunBind . mkAnnList (indented list)
 mkFunctionBind' :: Name -> [([Pattern], Expr)] -> ValueBind
 mkFunctionBind' name matches = mkFunctionBind $ map (\(args, rhs) -> mkMatch (mkMatchLhs name args) (mkUnguardedRhs rhs) Nothing) matches
 
+mkFunctionBind'' :: [Match'] -> ValueBind'
+mkFunctionBind'' = mkAnn' child . UFunBind . mkAnnList' (indented list)
+
 -- | Creates a clause of function binding
 mkMatch :: MatchLhs -> Rhs -> Maybe LocalBinds -> Match
 mkMatch lhs rhs locs
   = mkAnn (child <> child <> child)
       $ UMatch lhs rhs (mkAnnMaybe (after " " opt) locs)
+
+mkMatch' :: MatchLhs' -> Rhs' -> Maybe LocalBinds' -> Match'
+mkMatch' lhs rhs locs
+  = mkAnn' (child <> child <> child)
+      $ UMatch lhs rhs (mkAnnMaybe' (after " " opt) locs)
 
 -- | Creates a match lhs with the function name and parameter names (@ f a b @)
 mkMatchLhs :: Name -> [Pattern] -> MatchLhs

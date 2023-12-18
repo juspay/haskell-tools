@@ -37,6 +37,9 @@ mkUnqualOp' n | GHC.isSymOcc (GHC.getOccName n) = mkAnn child $ UNormalOp $ mkSi
 mkUnqualOp :: String -> Operator
 mkUnqualOp = mkAnn child . UNormalOp . mkSimpleName
 
+mkUnqualOp'' :: String -> Operator'
+mkUnqualOp'' = mkAnn' child . UNormalOp . mkSimpleName''
+
 -- | Creates an annotated qualified (non-operator) binding name: @A.B.f@ or @(A.B.+)@
 mkQualName' :: [String] -> GHC.Name -> Name
 mkQualName' quals n | GHC.isSymOcc (GHC.getOccName n) = mkAnn ("(" <> child <> ")") $ UParenName $ mkQualifiedName' quals n
