@@ -26,12 +26,14 @@ type ExportSpec = Ann UExportSpec IdDom SrcTemplateStage
 
 -- | Marks a name to be imported or exported with related names (subspecifier)
 type IESpec = Ann UIESpec IdDom SrcTemplateStage
+type IESpec' = Ann UIESpec (Dom GhcPs) SrcTemplateStage
 
 -- | Specifies the imported element
 type ImportModifier = Ann UImportModifier IdDom SrcTemplateStage
 
 -- | Marks how related names will be imported or exported with a given name
 type SubSpec = Ann USubSpec IdDom SrcTemplateStage
+type SubSpec' = Ann USubSpec (Dom GhcPs) SrcTemplateStage
 
 -- | Pragmas that must be used after the module head
 type ModulePragma = Ann UModulePragma IdDom SrcTemplateStage
@@ -201,6 +203,7 @@ type ValueBind' = Ann UValueBind (Dom GhcPs) SrcTemplateStage
 
 -- | Clause of function binding
 type Match = Ann UMatch IdDom SrcTemplateStage
+type Match' = Ann UMatch (Dom GhcPs) SrcTemplateStage
 
 -- | Something on the left side of the match
 type MatchLhs = Ann UMatchLhs IdDom SrcTemplateStage
@@ -334,11 +337,13 @@ type QuasiQuote = Ann UQuasiQuote IdDom SrcTemplateStage
 
 -- | Haskell literals
 type Literal = Ann ULiteral IdDom SrcTemplateStage
+type Literal' = Ann ULiteral (Dom GhcPs) SrcTemplateStage
 
 -- * Names
 
 -- | A definition that functions as an operator
 type Operator = Ann UOperator IdDom SrcTemplateStage
+type Operator' = Ann UOperator (Dom GhcPs) SrcTemplateStage
 
 -- | A definition that functions as a name
 type Name = Ann UName IdDom SrcTemplateStage

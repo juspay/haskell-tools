@@ -24,6 +24,11 @@ mkVar' = mkAnn' child . UVar
 mkLit :: Literal -> Expr
 mkLit = mkAnn child . ULit
 
+-- | Create a literal expression (@ 42 @)
+mkLit' :: Literal' -> Expr'
+mkLit' = mkAnn' child . ULit
+
+
 -- | Create a infix operator application expression (@ a + b @)
 mkInfixApp :: Expr -> Operator -> Expr -> Expr
 mkInfixApp lhs op rhs = mkAnn (child <> " " <> child <> " " <> child) $ UInfixApp lhs op rhs
@@ -35,6 +40,10 @@ mkPrefixApp op rhs = mkAnn (child <> child) $ UPrefixApp op rhs
 -- | Create a function application expression (@ f 4 @)
 mkApp :: Expr -> Expr -> Expr
 mkApp f e = mkAnn (child <> " " <> child) (UApp f e)
+
+-- | Create a function application expression (@ f 4 @)
+mkApp'' :: Expr' -> Expr' -> Expr'
+mkApp'' f e = mkAnn' (child <> " " <> child) (UApp f e)
 
 -- | Create a lambda expression (@ \\a b -> a + b @)
 mkLambda :: [Pattern] -> Expr -> Expr
@@ -102,6 +111,10 @@ mkParArray exprs = mkAnn ("[: " <> child <> " :]") $ UParArray (mkAnnList (separ
 -- | Create a parenthesized expression: @( a + b )@
 mkParen :: Expr -> Expr
 mkParen = mkAnn ("(" <> child <> ")") . UParen
+
+-- | Create a parenthesized expression: @( a + b )@
+mkParen'' :: Expr' -> Expr'
+mkParen'' = mkAnn' ("(" <> child <> ")") . UParen
 
 -- | Create a left operator section: @(1+)@
 mkLeftSection :: Expr -> Operator -> Expr

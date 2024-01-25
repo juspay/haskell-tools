@@ -46,6 +46,11 @@ mkModuleExport = mkAnn ("module " <> child) . UModuleExport
 mkIESpec :: Name -> Maybe SubSpec -> IESpec
 mkIESpec name ss = mkAnn (child <> child <> child) (UIESpec noth name (mkAnnMaybe (after "(" $ followedBy ")" opt) ss))
 
+-- | Marks a name to be imported or exported with related names (subspecifier)
+mkIESpec' :: Name' -> Maybe SubSpec' -> IESpec'
+mkIESpec' name ss = mkAnn' (child <> child <> child) (
+  UIESpec noth' name (mkAnnMaybe' (after "(" $ followedBy ")" opt) ss))
+
 -- | Marks a pattern synonym to be imported or exported
 mkPatternIESpec :: Name -> IESpec
 mkPatternIESpec name = mkAnn (child <> child) (UIESpec (justVal $ mkAnn child UImportPattern) name noth)
@@ -83,6 +88,10 @@ mkImportDecl' source qualified safe pkg name rename spec
 -- | Restrict the import definition to ONLY import the listed names
 mkImportSpecList :: [IESpec] -> ImportSpec
 mkImportSpecList = mkAnn ("(" <> child <> ")") . UImportSpecList . mkAnnList (separatedBy ", " list)
+
+-- | Restrict the import definition to ONLY import the listed names
+mkImportSpecList' :: [IESpec'] -> ImportSpec'
+mkImportSpecList' = mkAnn' ("(" <> child <> ")") . UImportSpecList . mkAnnList' (separatedBy ", " list)
 
 -- | Restrict the import definition to DONT import the listed names
 mkImportHidingList :: [IESpec] -> ImportSpec

@@ -6,8 +6,8 @@ module Language.Haskell.Tools.Rewrite.Create.Literals where
 
 import Data.String (IsString(..), String)
 import Language.Haskell.Tools.AST (ULiteral(..))
-import Language.Haskell.Tools.Rewrite.Create.Utils (mkAnn)
-import Language.Haskell.Tools.Rewrite.ElementTypes (Literal)
+import Language.Haskell.Tools.Rewrite.Create.Utils (mkAnn, mkAnn')
+import Language.Haskell.Tools.Rewrite.ElementTypes (Literal, Literal')
 
 -- | Character literal: @'c'@
 mkCharLit :: Char -> Literal
@@ -16,6 +16,10 @@ mkCharLit c = mkAnn (fromString $ show c) $ UCharLit c
 -- | String literal: @"abc"@
 mkStringLit :: String -> Literal
 mkStringLit s = mkAnn (fromString $ show s) $ UStringLit s
+
+-- | String literal: @"abc"@
+mkStringLit' :: String -> Literal'
+mkStringLit' s = mkAnn' (fromString $ show s) $ UStringLit s
 
 -- | Integer literal: @12@
 mkIntLit :: Integer -> Literal
