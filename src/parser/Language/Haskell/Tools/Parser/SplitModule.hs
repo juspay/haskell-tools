@@ -83,6 +83,12 @@ import Language.Haskell.Tools.Refactor as HT
 --       For example if it already found a record wildcard, it won't check again
 
 --       Pretty easy now. Chcek wheter it is already in the ExtMap.
+getFileContents :: String -> IO String 
+getFileContents modulePath = do 
+    handle <- openFile modulePath ReadMode 
+    contents <- hGetContents handle 
+    _ <- hClose handle 
+    pure contents
 
 
 parseAndGetBackendFlowFunctions :: String -> IO ()
@@ -90,8 +96,8 @@ parseAndGetBackendFlowFunctions dir = do
     modules <- getAllHaskellModules dir
     moduleNames <- forM modules $ \modulePath -> do
         catch
-          (getModuleName <$> readFile modulePath)
-          (\(err :: SomeException) -> print (displayException err) *> pure Nothing)
+          (getModuleName <$> getFileContents modulePath)
+          (\(err :: SomeException) -> print ("HNAHAHHA" <> displayException err) *> pure Nothing)
     modFunHm <- foldlM appendIntoHm HM.empty $ catMaybes moduleNames
     _ <- HM.traverseWithKey (addMonitoringWrapper dir) modFunHm
     pure ()
@@ -139,23 +145,22 @@ findAndReplaceFun backendFlowFunWithCount moduleName expr@(Ann domDec valBind@(U
             (\(Ann domMatch (UMatch lhsSide rhsSide binds)) -> do 
                 -- let (lhsSide, rhsSide, binds, domMatch) = currMatch
                 let !funName = getFunctionNameFromLHS lhsSide
-                if HM.member funName funWithCountHm
-                    then do 
+                let !mbArgsCount = HM.lookup funName funWithCountHm
+                let !funcArgCount = getFunctionArgs lhsSide
+                case mbArgsCount of 
+                    Nothing -> pure $ (Ann domMatch (UMatch lhsSide rhsSide binds))
+                    Just argsCount ->  
                         case getRhsExpr rhsSide of
                             Just (oldRhsExpr, domO) -> do   
-                                let newRhsExpr = mkRhsInfixExp funName moduleName oldRhsExpr
+                                let newRhsExpr = mkRhsInfixExp funName moduleName oldRhsExpr (argsCount == funcArgCount)
                                     rhsSideWithMonitoring = mkUnguardedRhs' $ newRhsExpr
-                                    updatedMatch = (Ann domMatch (UMatch lhsSide rhsSideWithMonitoring binds))
-                                    
+                                    updatedMatch = (Ann domMatch (UMatch lhsSide rhsSideWithMonitoring binds))   
                                 pure updatedMatch
                             Nothing -> do
                                 print "------------PANIC-----------------"
                                 print $ "funName"
-                                pure (Ann domMatch (UMatch lhsSide rhsSide binds))
-                    else 
-                        pure $ (Ann domMatch (UMatch lhsSide rhsSide binds))
-            )
-        matchList
+                                pure (Ann domMatch (UMatch lhsSide rhsSide binds)))
+            matchList
     pure $ Ann domDec (UValueBinding (Ann domValBind (UFunBind (AnnListG domFunB updatedMatches)))) 
     -- pure (updatedValBind)
         -- else do
@@ -164,36 +169,34 @@ findAndReplaceFun backendFlowFunWithCount moduleName expr@(Ann domDec valBind@(U
         --     pure expr
 findAndReplaceFun _ _ expr = pure expr         
     
+getFunctionArgs :: Ann UMatchLhs (Dom GhcPs) SrcTemplateStage -> Int 
+getFunctionArgs (Ann _ (UNormalLhs _ (AnnListG _ ls))) = length ls
+getFunctionArgs _ = -1
 
 getMatch :: Ann UMatch (Dom GhcPs) SrcTemplateStage -> ((Ann UMatchLhs (Dom GhcPs) SrcTemplateStage), (Ann URhs (Dom GhcPs) SrcTemplateStage), (AnnMaybeG ULocalBinds (Dom GhcPs) SrcTemplateStage), (NodeInfo (SemanticInfo (Dom GhcPs) URhs) (SpanInfo SrcTemplateStage)))
 getMatch (Ann dom (UMatch lhs rhs binds)) = (lhs, rhs, binds, dom)
 
-mkRhsInfixExp :: String -> String -> (Ann UExpr (Dom GhcPs) SrcTemplateStage) -> (Ann UExpr (Dom GhcPs) SrcTemplateStage)
-mkRhsInfixExp funName moduleName rhsExpr = 
+mkRhsInfixExp :: String -> String -> (Ann UExpr (Dom GhcPs) SrcTemplateStage) -> Bool -> (Ann UExpr (Dom GhcPs) SrcTemplateStage)
+mkRhsInfixExp funName moduleName rhsExpr True =  
     mkApp'' 
         (mkApp''  
             (mkVar' $ mkName' "withMonitoring")
-            (mkLit' $ mkStringLit' $ (last modulePrefix) <> "." <> funName))
+            (mkLit' $ mkStringLit' $ (getModulePrefix moduleName) <> "." <> funName))
         (mkApp'' 
                 (mkVar' $ mkName' "$")
                 (mkParen'' rhsExpr))
-
-
-
-    -- mkApp''
-    --     (mkApp''
-    --         (mkParen''
-    --             ( mkApp''  
-    --                 (mkVar' $ mkName' "withMonitoring")
-    --                 (mkLit' $ mkStringLit' $ (last modulePrefix) <> "." <> funName)))
-    --         (mkVar' $ mkName' ".")
-    --     )
-    --     (mkParen'' rhsExpr)
-            -- (mkApp'' 
-            --     (mkVar' $ mkName' "$")
-                
+mkRhsInfixExp funName moduleName rhsExpr False =  
+    mkApp''
+        (mkApp''
+            (mkParen''
+                ( mkApp''  
+                    (mkVar' $ mkName' "withMonitoring")
+                    (mkLit' $ mkStringLit' $ (getModulePrefix moduleName) <> "." <> funName)))
+            (mkVar' $ mkName' ".")
+        )
+        (mkParen'' rhsExpr)                
     where
-        modulePrefix = words $ map (\char -> if char == '.' then ' ' else char) moduleName
+getModulePrefix moduleName = last $ words $ map (\char -> if char == '.' then ' ' else char) moduleName
 
 getRhsAnn :: (Ann UExpr (Dom GhcPs) SrcTemplateStage) -> (NodeInfo (SemanticInfo (Dom GhcPs) URhs) (SpanInfo SrcTemplateStage)) -> Ann URhs (Dom GhcPs) SrcTemplateStage
 getRhsAnn e dom = (Ann dom (UUnguardedRhs e))
@@ -224,8 +227,10 @@ getFunctionNameFromValBind expr@(Ann _ (UNormalLhs (Ann _ (UNormalName (Ann _ (U
 
 
 getFunctionsAsBackendFlow :: String -> String -> IO [(String, Int)]
-getFunctionsAsBackendFlow modulePath moduleName = do 
+getFunctionsAsBackendFlow modulePath moduleName = do
+    print moduleName 
     moduleAST <- moduleParser modulePath moduleName
+    -- print moduleAST
     let funNames = mapMaybe (getFunctionNames) (moduleAST ^? biplateRef)
     pure $ funNames
     
@@ -234,7 +239,7 @@ getFunctionNames expr@(Ann _ (UTypeSigDecl (Ann _ (UTypeSignature (AnnListG _ na
     let funNam = map getFunctions' name
         !funSig = map (getFunctions') ((_type) ^? biplateRef)
         funArgCount = sum $ map getFunctionCount ((_type) ^? biplateRef)
-    in if any (\x -> x == "BackendFlow") funSig then Just $ (head funNam, funArgCount) else Nothing
+    in if any (\x -> elem x ["BackendFlow","MonadFlow","DeciderFlow"]) funSig then Just $ (head funNam, funArgCount) else Nothing
 getFunctionNames expr = Nothing
 
 getFunctionCount :: Ann UType (Dom GhcPs) SrcTemplateStage -> Int
