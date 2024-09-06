@@ -20,6 +20,8 @@ library
                      , Language.Haskell.Tools.Parser.SplitTypesInModule
                      , Language.Haskell.Tools.Parser.RemoveUnusedFuns
                      , Language.Haskell.Tools.Parser.FlowChange
+                     , Language.Haskell.Tools.Parser.RemoveExceptionsInGatewaySyncFn
+                    -- , Language.Haskell.Tools.Parser.GatewayRefact
 
   other-modules:       Language.Haskell.Tools.Parser.GetFunctionBranching
 
